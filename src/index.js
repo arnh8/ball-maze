@@ -1,8 +1,10 @@
 import * as THREE from "three";
 import * as CANNON from "cannon-es";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import { bodyToMesh } from "./three-conversion-utils";
 import { Quaternion } from "cannon-es";
 import CannonDebugger from "cannon-es-debugger"; //Debugger
+import { cannonMaze } from "./maze";
 
 //Scene setup
 const scene = new THREE.Scene();
@@ -75,10 +77,10 @@ const cylBody = new CANNON.Body({ mass: 0, shape: cylShape });
 cylBody.position.set(0, 5, 0);
 
 //add a box to both
-const boxgeo = new THREE.BoxGeometry(2, 2, 2);
+const boxgeo = new THREE.BoxGeometry(12, 2, 2);
 const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
 const exampleBox = new THREE.Mesh(boxgeo, material);
-
+exampleBox.position.set(0, 18, 0);
 scene.add(exampleBox);
 
 //
@@ -87,8 +89,12 @@ const boxShape = new CANNON.Box(new CANNON.Vec3(2, 2, 2));
 cylBody.addShape(boxShape, new CANNON.Vec3(1, 0, 1));
 
 //Add Cylinder to scene and world
-scene.add(cylinder);
+//scene.add(cylinder);
 world.addBody(cylBody);
+
+const maze = bodyToMesh(cylBody, cylMaterial);
+cannonMaze();
+scene.add(maze);
 
 //Plane Setup
 const planeGeo = new THREE.PlaneGeometry(100, 100);
@@ -169,7 +175,6 @@ document.addEventListener("keydown", (e) => {
 });
 
 document.addEventListener("keyup", (e) => {
-    wpress = false;
     switch (e.key) {
         case "w":
             wpress = false;
@@ -188,9 +193,6 @@ document.addEventListener("keyup", (e) => {
     }
 });
 
-const AAAA = new CANNON.Vec3(0, 1, 0);
-const XXXX = new Quaternion().setFromAxisAngle(AAAA, 0);
-
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.update();
 
@@ -204,11 +206,11 @@ function animate() {
 
     rotateFromInput();
 
-    exampleBox.position.copy(cylBody.position);
+    //exampleBox.position.copy(cylBody.position);
     exampleBox.quaternion.copy(cylBody.quaternion);
 
-    cylinder.position.copy(cylBody.position);
-    cylinder.quaternion.copy(cylBody.quaternion);
+    maze.position.copy(cylBody.position);
+    maze.quaternion.copy(cylBody.quaternion);
 
     cannonDebugger.update(); //Debugger
     world.fixedStep();
@@ -220,26 +222,22 @@ function rotateFromInput() {
     let vec = new CANNON.Vec3(0, 0, 0);
     if (wpress) {
         vec.vadd(new CANNON.Vec3(-1, 0, 0), vec);
-        console.log(vec);
+        //console.log(vec);
     }
     if (spress) {
         vec.vadd(new CANNON.Vec3(1, 0, 0), vec);
-        console.log(vec);
+        //console.log(vec);
     }
     if (apress) {
         vec.vadd(new CANNON.Vec3(0, 0, 1), vec);
-        console.log(vec);
+        //console.log(vec);
     }
     if (dpress) {
         vec.vadd(new CANNON.Vec3(0, 0, -1), vec);
-        console.log(vec);
+        //console.log(vec);
     }
     const x = new Quaternion().setFromAxisAngle(vec, 0.2);
     cylBody.quaternion.slerp(x, 0.02, cylBody.quaternion);
 }
 
 animate();
-
-//simulate a ball on a rectangle
-
-//simulate controlling the orientation of the rectangle
