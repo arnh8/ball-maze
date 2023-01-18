@@ -6,6 +6,25 @@ import { Quaternion } from "cannon-es";
 import CannonDebugger from "cannon-es-debugger"; //Debugger
 import { createMaze, hasConnection } from "./maze";
 
+//Dimensions
+//Maze parameters
+const mazeLength = 15;
+const mazeFloorThickness = 0.5;
+const mazeWidth = 15;
+const cells = 11; //cells x cells maze
+const t = 0.5; //outer wall width
+const t_i = t / 2; //inner wall width
+//Sphere paremeters
+const sphereRadius = 0.5;
+
+//Materials
+const sphereMaterial = new THREE.MeshLambertMaterial({ color: 0xffffff });
+const mazeMaterial = new THREE.MeshLambertMaterial({ color: 0x164013 });
+const groundMaterial = new THREE.MeshLambertMaterial({
+    color: 0x51814e,
+    side: THREE.DoubleSide,
+});
+
 //Scene setup
 const scene = new THREE.Scene();
 
@@ -22,29 +41,21 @@ const camera = new THREE.PerspectiveCamera(
     2000
 );
 
-camera.position.z = 24;
-camera.position.x = 0;
-camera.position.y = 24;
-camera.lookAt(0, 0, 0);
+camera.position.set(0, 34, 24);
+//camera.lookAt(0, 110, 0);
 
-/*const helper = new THREE.CameraHelper(camera);
-scene.add(helper);
-*/
-//Sphere setup
-const sphereRadius = 1;
-const sphereWidth = 21;
+//SphereMesh
+const sphereWidthSegments = 21;
 const sphereHeight = 16;
 const sphereGeometry = new THREE.SphereGeometry(
     sphereRadius,
-    sphereWidth,
+    sphereWidthSegments,
     sphereHeight
 );
-const sphereMaterial = new THREE.MeshLambertMaterial({ color: 0xffffff });
-
-const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
-sphere.castShadow = true;
-sphere.receiveShadow = true;
-scene.add(sphere);
+const sphereMesh = new THREE.Mesh(sphereGeometry, sphereMaterial);
+sphereMesh.castShadow = true;
+sphereMesh.receiveShadow = true;
+scene.add(sphereMesh);
 
 //SphereBody
 const sphereBody = new CANNON.Body({
@@ -54,19 +65,14 @@ const sphereBody = new CANNON.Body({
 sphereBody.position.set(0, 20, 0);
 world.addBody(sphereBody);
 
-//MAZE PARAMETERS
-let l = 15;
-let h = 0.5;
-let w = 15;
-let cells = 9;
-const t = 0.5; //outer wall width
-const t_i = t / 2; //inner wall width
-//
-
 const matrix = createMaze(cells, cells);
-const cellwidth = (l - 2 * t - (cells - 1) * t_i) / cells;
+const cellwidth = (mazeLength - 2 * t - (cells - 1) * t_i) / cells;
 //Floor of maze (also the main body)
-const halfExtents = new CANNON.Vec3(l - 2 * t, h, w - 2 * t);
+const halfExtents = new CANNON.Vec3(
+    mazeLength - 2 * t,
+    mazeFloorThickness,
+    mazeWidth - 2 * t
+);
 const mazeFloor = new CANNON.Body({
     //consider changing floor to a plane
     mass: 0,
@@ -74,12 +80,12 @@ const mazeFloor = new CANNON.Body({
 });
 
 //Outer walls
-const boxShape = new CANNON.Box(new CANNON.Vec3(w - 2 * t, 1, t));
-mazeFloor.addShape(boxShape, new CANNON.Vec3(0, 1.5, l - t));
-mazeFloor.addShape(boxShape, new CANNON.Vec3(0, 1.5, -(l - t)));
-const box1Shape = new CANNON.Box(new CANNON.Vec3(t, 1, l - 2 * t));
-mazeFloor.addShape(box1Shape, new CANNON.Vec3(w - t, 1.5, 0));
-mazeFloor.addShape(box1Shape, new CANNON.Vec3(-(w - t), 1.5, 0));
+const boxShape = new CANNON.Box(new CANNON.Vec3(mazeWidth - 2 * t, 1, t));
+mazeFloor.addShape(boxShape, new CANNON.Vec3(0, 1.5, mazeLength - t));
+mazeFloor.addShape(boxShape, new CANNON.Vec3(0, 1.5, -(mazeLength - t)));
+const box1Shape = new CANNON.Box(new CANNON.Vec3(t, 1, mazeLength - 2 * t));
+mazeFloor.addShape(box1Shape, new CANNON.Vec3(mazeWidth - t, 1.5, 0));
+mazeFloor.addShape(box1Shape, new CANNON.Vec3(-(mazeWidth - t), 1.5, 0));
 
 //Inner vertical walls
 const zoffset = 1.5;
@@ -94,8 +100,10 @@ for (let cellNo = 0; cellNo < matrix[0].length * matrix[0].length; cellNo++) {
     const y = Math.floor(cellNo / cells);
     if (!hasConnection(x, y, x + 1, y, matrix)) {
         //add the block, calculate offsets
-        const xoffset = 2 * (x + 1) * (cellwidth + t_i) - (l - 2 * t + t_i);
-        const yoffset = 2 * y * (cellwidth + t_i) - (l - 2 * t - cellwidth);
+        const xoffset =
+            2 * (x + 1) * (cellwidth + t_i) - (mazeLength - 2 * t + t_i);
+        const yoffset =
+            2 * y * (cellwidth + t_i) - (mazeLength - 2 * t - cellwidth);
         mazeFloor.addShape(vert, new CANNON.Vec3(xoffset, zoffset, yoffset));
     }
 }
@@ -129,10 +137,11 @@ for (let y = 0; y < matrix[0].length - 1; y++) {
             if (wallsBelow[x - 1] == 0) {
                 //00, add cube
                 const horiz = new CANNON.Box(new CANNON.Vec3(t_i, 1, t_i));
-                const xoffset = 2 * x * (cellwidth + t_i) - (l - 2 * t + t_i);
+                const xoffset =
+                    2 * x * (cellwidth + t_i) - (mazeLength - 2 * t + t_i);
                 const yoffset =
                     2 * y * (cellwidth + t_i) -
-                    (l - 2 * t - 2 * cellwidth - t_i); //- 5.55;
+                    (mazeLength - 2 * t - 2 * cellwidth - t_i); //- 5.55;
                 mazeFloor.addShape(
                     horiz,
                     new CANNON.Vec3(xoffset, zoffset, yoffset)
@@ -146,12 +155,12 @@ for (let y = 0; y < matrix[0].length - 1; y++) {
                 );
                 const xoffset =
                     2 * x * (cellwidth + t_i) -
-                    (l - 2 * t + t_i) -
+                    (mazeLength - 2 * t + t_i) -
                     calcLength +
                     t_i;
                 const yoffset =
                     2 * y * (cellwidth + t_i) -
-                    (l - 2 * t - 2 * cellwidth - t_i); //- 5.55;
+                    (mazeLength - 2 * t - 2 * cellwidth - t_i); //- 5.55;
 
                 mazeFloor.addShape(
                     horiz,
@@ -170,13 +179,13 @@ for (let y = 0; y < matrix[0].length - 1; y++) {
                     );
                     const xoffset =
                         2 * x * (cellwidth + t_i) -
-                        (l - 2 * t + t_i) -
+                        (mazeLength - 2 * t + t_i) -
                         calcLength +
                         t_i +
                         2 * cellwidth;
                     const yoffset =
                         2 * y * (cellwidth + t_i) -
-                        (l - 2 * t - 2 * cellwidth - t_i); //- 5.55;
+                        (mazeLength - 2 * t - 2 * cellwidth - t_i); //- 5.55;
 
                     mazeFloor.addShape(
                         horiz,
@@ -193,13 +202,13 @@ for (let y = 0; y < matrix[0].length - 1; y++) {
                     );
                     const xoffset =
                         2 * x * (cellwidth + t_i) -
-                        (l - 2 * t + t_i) -
+                        (mazeLength - 2 * t + t_i) -
                         calcLength +
                         t_i +
                         2 * cellwidth;
                     const yoffset =
                         2 * y * (cellwidth + t_i) -
-                        (l - 2 * t - 2 * cellwidth - t_i); //- 5.55;
+                        (mazeLength - 2 * t - 2 * cellwidth - t_i); //- 5.55;
                     mazeFloor.addShape(
                         horiz,
                         new CANNON.Vec3(xoffset, zoffset, yoffset)
@@ -215,9 +224,7 @@ for (let y = 0; y < matrix[0].length - 1; y++) {
 
 mazeFloor.position.set(0, 5, 0);
 world.addBody(mazeFloor);
-const mazeMaterial = new THREE.MeshLambertMaterial({
-    color: 0x164013,
-});
+
 const mazeMesh = bodyToMesh(mazeFloor, mazeMaterial);
 
 //Add rounded corners to maze mesh
@@ -234,7 +241,7 @@ for (let x = 0; x < 4; x++) {
     );
 
     const mazeCornerMesh = new THREE.Mesh(cornerGeometry, mazeMaterial);
-    const cOffset = l - 2 * t;
+    const cOffset = mazeLength - 2 * t;
     switch (x) {
         case 0:
             mazeCornerMesh.position.set(cOffset, 1.5, cOffset);
@@ -264,15 +271,11 @@ for (let i = 0; i < mazeMesh.children.length; i++) {
 scene.add(mazeMesh);
 
 //Plane Setup
-const planeGeo = new THREE.PlaneGeometry(1000, 1000);
-const planeMat = new THREE.MeshLambertMaterial({
-    color: 0x51814e,
-    side: THREE.DoubleSide,
-});
-const plane = new THREE.Mesh(planeGeo, planeMat);
-plane.receiveShadow = true;
-plane.rotation.x = Math.PI * -0.5;
-scene.add(plane);
+const groundGeometry = new THREE.PlaneGeometry(1000, 1000);
+const groundMesh = new THREE.Mesh(groundGeometry, groundMaterial);
+groundMesh.receiveShadow = true;
+groundMesh.rotation.x = Math.PI * -0.5;
+scene.add(groundMesh);
 
 //Ground
 const groundBody = new CANNON.Body({
@@ -317,6 +320,7 @@ scene.add(light);
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true;
+//renderer.shadowMap.type = THREE.VSMShadowMap;
 document.body.appendChild(renderer.domElement);
 
 let wpress = false;
@@ -369,9 +373,9 @@ const cannonDebugger = new CannonDebugger(scene, world); //Debugger
 
 function animate() {
     requestAnimationFrame(animate);
-    sphere.position.copy(sphereBody.position);
-    sphere.quaternion.copy(sphereBody.quaternion);
-    plane.quaternion.copy(groundBody.quaternion);
+    sphereMesh.position.copy(sphereBody.position);
+    sphereMesh.quaternion.copy(sphereBody.quaternion);
+    groundMesh.quaternion.copy(groundBody.quaternion);
 
     rotateFromInput();
 
