@@ -19,8 +19,14 @@ const wh = 0.5; //wall height
 const sphereRadius = 0.5;
 
 //Materials
-const sphereMaterial = new THREE.MeshLambertMaterial({ color: 0xffffff });
-const mazeMaterial = new THREE.MeshLambertMaterial({ color: 0x164013 });
+//const sphereMaterial = new THREE.MeshLambertMaterial({ color: 0xffffff });
+const sphereMaterial = new THREE.MeshPhongMaterial({
+    color: 0xa7fdff,
+    shininess: 150,
+});
+const mazeMaterial = new THREE.MeshLambertMaterial({
+    color: 0x164013,
+});
 const groundMaterial = new THREE.MeshLambertMaterial({
     color: 0x51814e,
     side: THREE.DoubleSide,
@@ -35,14 +41,26 @@ const world = new CANNON.World({
 });
 
 //Camera
+/*
 const camera = new THREE.PerspectiveCamera(
     90,
     window.innerWidth / window.innerHeight,
     0.1,
     2000
 );
+*/
 
-camera.position.set(0, 34, 24);
+const camera = new THREE.OrthographicCamera(
+    window.innerWidth / -50,
+    window.innerWidth / 50,
+    window.innerHeight / 50,
+    window.innerHeight / -50,
+    1,
+    1000
+);
+camera.zoom = 0.96;
+camera.updateProjectionMatrix();
+camera.position.set(-28, 20, 28);
 //camera.lookAt(0, 110, 0);
 
 //SphereMesh
@@ -291,12 +309,12 @@ scene.add(axesHelper);
 
 //Lighting
 /*
-const light = new THREE.SpotLight(0xffffff, 1, 0);
-light.position.set(0, 20, 0);
-light.angle = Math.PI / 2.55;
-light.castShadow = true;
+const lighty = new THREE.SpotLight(0xffffff, 1, 0);
+lighty.position.set(0, 15, 0);
+lighty.angle = Math.PI / 2.55;
+lighty.castShadow = true;
+scene.add(lighty);
 */
-
 const hemilight = new THREE.HemisphereLight(0xcccccc, 0x000000, 1);
 scene.add(hemilight);
 
@@ -365,6 +383,17 @@ document.addEventListener("keyup", (e) => {
             break;
     }
 });
+
+window.addEventListener("resize", onWindowResize);
+function onWindowResize() {
+    camera.left = window.innerWidth / -50;
+    camera.right = window.innerWidth / 50;
+    camera.top = window.innerHeight / 50;
+    camera.bottom = window.innerHeight / -50;
+
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+}
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.update();
