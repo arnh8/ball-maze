@@ -5,11 +5,12 @@ import { bodyToMesh } from "./three-conversion-utils";
 import { Quaternion } from "cannon-es";
 import CannonDebugger from "cannon-es-debugger"; //Debugger
 import { createMaze, hasConnection } from "./maze";
+import { bar } from "./bar";
 
 //Dimensions
 //Maze parameters
 const mazeLength = 15;
-const mazeFloorThickness = 0.5;
+const mazeFloorThickness = 0.25;
 const mazeWidth = 15;
 const cells = 11; //cells x cells maze
 const oww = 0.5; //outer wall width
@@ -58,9 +59,8 @@ const camera = new THREE.OrthographicCamera(
     1,
     1000
 );
-camera.zoom = 0.96;
-camera.updateProjectionMatrix();
-camera.position.set(-28, 20, 28);
+
+camera.position.set(-26, 23, 26);
 //camera.lookAt(0, 110, 0);
 
 //SphereMesh
@@ -240,7 +240,7 @@ for (let y = 0; y < matrix[0].length - 1; y++) {
     wallsBelow = [];
 }
 
-mazeFloor.position.set(0, 5, 0);
+mazeFloor.position.set(0, 6, 0);
 world.addBody(mazeFloor);
 
 const mazeMesh = bodyToMesh(mazeFloor, mazeMaterial);
@@ -303,42 +303,38 @@ const groundBody = new CANNON.Body({
 groundBody.quaternion.setFromEuler(-Math.PI / 2, 0, 0); // make it face up
 world.addBody(groundBody);
 
-//Axeshelper
-const axesHelper = new THREE.AxesHelper(5);
-scene.add(axesHelper);
-
 //Lighting
 /*
 const lighty = new THREE.SpotLight(0xffffff, 1, 0);
-lighty.position.set(0, 15, 0);
-lighty.angle = Math.PI / 2.55;
+lighty.position.set(2, 17, 2);
+lighty.angle = Math.PI / 2;
 lighty.castShadow = true;
-scene.add(lighty);
+lighty.target = sphereMesh;
+scene.add(lighty)
 */
+
 const hemilight = new THREE.HemisphereLight(0xcccccc, 0x000000, 1);
 scene.add(hemilight);
 
-const d = 20;
-const light = new THREE.DirectionalLight(0xffffff, 1);
-light.castShadow = true;
-light.position.set(10, 17, 10);
-light.shadow.mapSize.width = 512; // default
-light.shadow.mapSize.height = 512;
-light.shadow.camera.left = -d;
-light.shadow.camera.right = d;
-light.shadow.camera.top = d;
-light.shadow.camera.bottom = -d;
-//light.target = sphere;
-scene.add(light);
-
-//const lightHelper = new THREE.CameraHelper(light.shadow.camera);
-//scene.add(lightHelper);
+const sunLen = 15;
+const sunWid = 22;
+const sunLight = new THREE.DirectionalLight(0xffffff, 1);
+sunLight.castShadow = true;
+sunLight.position.set(10, 17, 9);
+sunLight.shadow.mapSize.width = 1024;
+sunLight.shadow.mapSize.height = 1024;
+sunLight.shadow.camera.left = -sunWid;
+sunLight.shadow.camera.right = sunWid;
+sunLight.shadow.camera.top = sunLen + 9;
+sunLight.shadow.camera.bottom = -sunLen;
+scene.add(sunLight);
 
 //Rendering/Animating
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true;
-//renderer.shadowMap.type = THREE.VSMShadowMap;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+document.body.appendChild(bar());
 document.body.appendChild(renderer.domElement);
 
 let wpress = false;
@@ -390,15 +386,20 @@ function onWindowResize() {
     camera.right = window.innerWidth / 50;
     camera.top = window.innerHeight / 50;
     camera.bottom = window.innerHeight / -50;
-
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
 }
 
-const controls = new OrbitControls(camera, renderer.domElement);
-controls.update();
-
+//Debugging/Helpers
+const axesHelper = new THREE.AxesHelper(15);
+scene.add(axesHelper);
 const cannonDebugger = new CannonDebugger(scene, world); //Debugger
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0, 5, 0);
+controls.update();
+//const sunHelper = new THREE.CameraHelper(sunLight.shadow.camera);
+//scene.add(sunhelper);
 
 function animate() {
     requestAnimationFrame(animate);
@@ -407,9 +408,6 @@ function animate() {
     groundMesh.quaternion.copy(groundBody.quaternion);
 
     rotateFromInput();
-
-    //exampleBox.position.copy(cylBody.position);
-    //exampleBox.quaternion.copy(cylBody.quaternion);
 
     mazeMesh.position.copy(mazeFloor.position);
     mazeMesh.quaternion.copy(mazeFloor.quaternion);
