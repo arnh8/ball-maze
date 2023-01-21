@@ -6,6 +6,7 @@ import { Quaternion } from "cannon-es";
 import CannonDebugger from "cannon-es-debugger"; //Debugger
 import { createMaze, hasConnection } from "./maze";
 import { bar } from "./bar";
+import tinycolor from "tinycolor2";
 
 //Dimensions
 //Maze parameters
@@ -19,17 +20,22 @@ const wh = 0.5; //wall height
 //Sphere paremeters
 const sphereRadius = 0.5;
 
+//0xa7fdff 0x164013 0x51814e
+
 //Materials
+const colorSeed = Math.floor(Math.random() * 0x444444 + 0x111111);
+const colors = tinycolor("#" + colorSeed.toString(16)).analogous();
+console.log(colors[0]);
 //const sphereMaterial = new THREE.MeshLambertMaterial({ color: 0xffffff });
 const sphereMaterial = new THREE.MeshPhongMaterial({
-    color: 0xa7fdff,
+    color: parseInt(colors[0].toHex(), 16),
     shininess: 150,
 });
 const mazeMaterial = new THREE.MeshLambertMaterial({
-    color: 0x164013,
+    color: parseInt(colors[1].darken(15).toHex(), 16),
 });
 const groundMaterial = new THREE.MeshLambertMaterial({
-    color: 0x51814e,
+    color: parseInt(colors[2].toHex(), 16),
     side: THREE.DoubleSide,
 });
 
@@ -391,8 +397,8 @@ function onWindowResize() {
 }
 
 //Debugging/Helpers
-const axesHelper = new THREE.AxesHelper(15);
-scene.add(axesHelper);
+//const axesHelper = new THREE.AxesHelper(15);
+//scene.add(axesHelper);
 const cannonDebugger = new CannonDebugger(scene, world); //Debugger
 
 const controls = new OrbitControls(camera, renderer.domElement);

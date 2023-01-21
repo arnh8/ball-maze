@@ -11,7 +11,8 @@
   "dependencies": {
     "cannon-es": "^0.20.0",
     "cannon-es-debugger": "^1.0.0",
-    "three": "^0.146.0"
+    "three": "^0.146.0",
+    "tinycolor2": "^1.5.2"
   },
   "devDependencies": {
     "webpack": "^5.75.0",
