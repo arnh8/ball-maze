@@ -18,8 +18,8 @@ export function bar() {
     right.classList.add("hidden", "info");
 
     const githubLink = document.createElement("a");
-    githubLink.href = "https://github.com/arnh8";
-    githubLink.innerText = "github.com/arnh8";
+    githubLink.href = "https://github.com/arnh8/ball-maze";
+    githubLink.innerText = "github.com/arnh8/ball-maze";
 
     right.appendChild(githubLink);
     top.appendChild(left);
