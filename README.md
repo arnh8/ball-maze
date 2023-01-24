@@ -22,4 +22,12 @@ This is a project I made to practice with js libraries, in this instance three.j
 
 -   View it [here!](https://arnh8.github.io/ball-maze-demo)
 
+### Screenshots
+
+-   Debugging
+
 ![](./screen2.png)
+
+-   Adjusting parameters
+
+![](./screen3.png)
