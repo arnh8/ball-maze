@@ -1,66 +1,57 @@
 body {
-    margin: 0;
-    font-family: "Manrope";
+  margin: 0;
+  font-family: "Manrope";
 }
 
 #bar {
-    margin: auto auto;
-    justify-content: space-evenly;
-    align-items: center;
-    display: flex;
-    padding: 5px;
-    box-sizing: border-box;
+  margin: auto auto;
+  justify-content: space-evenly;
+  align-items: center;
+  display: flex;
+  padding: 5px;
+  box-sizing: border-box;
 
-    color: white;
-    background-color: black;
-    opacity: 80%;
-    position: absolute;
-    width: 100%;
-    min-height: 5%;
+  color: white;
+  background-color: black;
+  opacity: 80%;
+  position: absolute;
+  width: 100%;
+  min-height: 5%;
 }
 
 button {
-    border-radius: 50%;
-    width: 50px;
-    height: 50px;
-    opacity: 35%;
-    background-color: rgb(255, 255, 255);
-    font-size: 24px;
-    font-family: "Manrope";
-    transition: opacity 0.5s ease-out 50ms;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  opacity: 35%;
+  background-color: rgb(255, 255, 255);
+  font-size: 24px;
+  font-family: "Manrope";
+  transition: opacity 0.5s ease-out 50ms;
 }
 
 button:hover {
-    transition: opacity 0.5s ease-out 50ms;
-    opacity: 100%;
+  transition: opacity 0.5s ease-out 50ms;
+  opacity: 100%;
 }
 
 a {
-    color: white;
-    font-weight: 500;
+  color: white;
+  font-weight: 500;
 }
 
 .hidden {
-    display: none;
-    visibility: hidden;
-    opacity: 0;
+  visibility: hidden;
+  opacity: 0;
+  transition: 0.3s;
 }
 
 .shown {
-    opacity: 1;
-    animation: fade 0.5s;
-}
-
-@keyframes fade {
-    0% {
-        opacity: 0;
-    }
-
-    100% {
-        opacity: 1;
-    }
+  visibility: visible;
+  opacity: 1;
+  transition: 0.3s;
 }
 
 .info {
-    width: 30%;
+  width: 30%;
 }
