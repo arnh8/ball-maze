@@ -4,7 +4,7 @@ export function bar() {
 
   const left = document.createElement("div");
   left.innerText =
-    "Use WASD to tilt the maze! Refreshing generates a new maze with different colors.";
+    "Use WASD to tilt the maze! Refreshing generates a new maze with different colors. Pressing x enables debug meshes.";
   left.id = "left";
   left.classList.add("shown", "info");
 

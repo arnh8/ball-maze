@@ -1,221 +1,196 @@
-//The edges of a graph represent a connection between two junctions of a maze.
-function graphNode(x, y) {
-    const connections = [];
-    const printNode = () => {
-        console.log(`(${x},${y})`);
-    };
+import * as THREE from "three";
+import * as CANNON from "cannon-es";
 
-    return {
-        x,
-        y,
-        connections,
-        printNode,
-        visited: false,
-    };
-}
-function printMaze(matrix, x, y) {
-    let mazestring = "  0   1   2   3   4   5   6   7   8   9 \n";
-    //A maze with x cells has 2x+1 walls?
-    for (let i = 0; i < 2 * y + 1; i++) {
-        mazestring += "██";
+import { createMaze, hasConnection } from "./utils/maze-generator";
+import { bodyToMesh } from "./utils/three-conversion-utils";
+//Args needed
+//cells: if cells is x, then the maze will have the shape of x by x cells
+//oww = outer wall width, iww = inner wall width
+//wh = wall height
+const getMazeBody = ({ cells, length, width, floor, oww, iww, wh }) => {
+  const matrix = createMaze(cells, cells);
+  const cellwidth = (length - 2 * oww - (cells - 1) * iww) / cells;
+  const halfExtents = new CANNON.Vec3(length - 2 * oww, floor, width - 2 * oww);
+
+  //Init floor of maze
+  const base = new CANNON.Body({
+    //consider changing floor to a plane
+    mass: 0,
+    shape: new CANNON.Box(halfExtents),
+  });
+
+  //Outer walls
+  const zoffset = wh + floor;
+  const boxShape = new CANNON.Box(new CANNON.Vec3(width - 2 * oww, wh, oww));
+  base.addShape(boxShape, new CANNON.Vec3(0, zoffset, length - oww));
+  base.addShape(boxShape, new CANNON.Vec3(0, zoffset, -(length - oww)));
+  const box1Shape = new CANNON.Box(new CANNON.Vec3(oww, wh, length - 2 * oww));
+  base.addShape(box1Shape, new CANNON.Vec3(width - oww, zoffset, 0));
+  base.addShape(box1Shape, new CANNON.Vec3(-(width - oww), zoffset, 0));
+
+  //Inner vertical walls
+  const vert = new CANNON.Box(new CANNON.Vec3(iww, wh, cellwidth));
+  for (let cellNo = 0; cellNo < matrix[0].length * matrix[0].length; cellNo++) {
+    //If cellNo is one of the cells on the far right skip it
+    if ((cellNo - cells + 1) % cells == 0) {
+      continue;
+    }
+    //Check if connection to the right, if not, put a wall there
+    const x = cellNo % cells;
+    const y = Math.floor(cellNo / cells);
+    if (!hasConnection(x, y, x + 1, y, matrix)) {
+      //add the block, calculate offsets
+      const xoffset =
+        2 * (x + 1) * (cellwidth + iww) - (length - 2 * oww + iww);
+      const yoffset =
+        2 * y * (cellwidth + iww) - (length - 2 * oww - cellwidth);
+      base.addShape(vert, new CANNON.Vec3(xoffset, zoffset, yoffset));
+    }
+  }
+
+  //Inner Horizontal walls (skip bottom row)
+  let calcLength = 0; //Length of wall to be made
+  let wallsBelow = [];
+  //For every row... this wont be pretty
+  for (let y = 0; y < matrix[0].length - 1; y++) {
+    for (let x = 0; x < matrix.length; x++) {
+      if (hasConnection(x, y, x, y + 1, matrix)) {
+        wallsBelow.push(0);
+      } else {
+        wallsBelow.push(1);
+      }
+    }
+    if (wallsBelow[0] == 0) {
+    } else {
+      //wall below
+      calcLength += cellwidth;
     }
 
-    mazestring += "\n";
-    //h,i => x,y
-    for (let i = 0; i < 2 * y; i++) {
-        //L/R Walls
-        if (i % 2 == 0) {
-            mazestring += "██  ";
-            if (hasConnection(0, i / 2, 1, i / 2, matrix)) {
-                mazestring += "    ";
-            } else {
-                mazestring += "██  ";
-            }
-            for (let h = 1; h < x - 1; h++) {
-                if (hasConnection(h, i / 2, h + 1, i / 2, matrix)) {
-                    mazestring = mazestring + "    ";
-                } else {
-                    mazestring += "██  ";
-                }
-            }
-            mazestring += "██\n";
-            //does 0,0 have a connection to its right?
-        }
-        //U/D Walls
-        else if (i % 2 == 1) {
-            mazestring += "██";
-            for (let h = 0; h < x; h++) {
-                if (hasConnection(h, (i - 1) / 2, h, (i - 1) / 2 + 1, matrix)) {
-                    /* console.log(
-                        h +
-                            "," +
-                            (i - 1) / 2 +
-                            " has a  connection with " +
-                            h +
-                            "," +
-                            ((i - 1) / 2 + 1)
-                    ); */
-                    mazestring += "  ██";
-                } else {
-                    /*
-                    console.log(
-                        h +
-                            "," +
-                            (i - 1) / 2 +
-                            " has no connection with " +
-                            h +
-                            "," +
-                            ((i - 1) / 2 + 1)
-                    );
-                    */
-                    mazestring += "████";
-                }
-            }
-            mazestring += " line " + i + "\n";
-        }
-    }
-
-    console.log(mazestring);
-}
-function isInBounds(a, b, x, y) {
-    if (a >= x || a < 0) {
-        return false;
-    }
-    if (b >= y || b < 0) {
-        return false;
-    }
-
-    return true;
-}
-export function hasConnection(a, b, x, y, matrix) {
-    //Is cell a,b connected to x,y?
-    if (matrix[a][b].connections.length == 0) {
-        return false;
-    }
-    for (let i = 0; i < matrix[a][b].connections.length; i++) {
-        const e = matrix[a][b].connections[i];
-        if (e.x == x && e.y == y) {
-            return true;
-        }
-    }
-    return false;
-}
-export function createMaze(x, y) {
-    //given dimensions x and y, make a maze x units by y units
-    //initialize 2d matrix of nodes
-    const matrix = [];
-    for (let i = 0; i < x; i++) {
-        const row = [];
-        for (let j = 0; j < y; j++) {
-            row.push(graphNode(i, j));
-        }
-        matrix[i] = row;
-    }
-
-    let stack = [];
-    stack.push(matrix[0][0]);
-    let newPath = false;
-    while (stack.length != 0) {
-        const currentNode = stack.pop();
-        if (currentNode.visited == true) {
-            continue;
-        }
-        currentNode.visited = true;
-        const i = currentNode.x;
-        const j = currentNode.y;
-
-        if (newPath) {
-            //find a neighbor with connections and connect it to currentNode
-            //Look up
-            if (
-                isInBounds(i, j - 1, x, y) &&
-                matrix[i][j - 1].connections.length > 0 &&
-                matrix[i][j - 1].visited
-            ) {
-                currentNode.connections.push(matrix[i][j - 1]);
-                matrix[i][j - 1].connections.push(currentNode);
-            }
-            //Look down
-            else if (
-                isInBounds(i, j + 1, x, y) &&
-                matrix[i][j + 1].connections.length > 0 &&
-                matrix[i][j + 1].visited
-            ) {
-                currentNode.connections.push(matrix[i][j + 1]);
-                matrix[i][j + 1].connections.push(currentNode);
-            }
-            //Look right
-            else if (
-                isInBounds(i + 1, j, x, y) &&
-                matrix[i + 1][j].connections.length > 0 &&
-                matrix[i + 1][j].visited
-            ) {
-                currentNode.connections.push(matrix[i + 1][j]);
-                matrix[i + 1][j].connections.push(currentNode);
-            }
-            //Look left
-            else if (
-                isInBounds(i - 1, j, x, y) &&
-                matrix[i - 1][j].connections.length > 0 &&
-                matrix[i - 1][j].visited
-            ) {
-                currentNode.connections.push(matrix[i - 1][j]);
-                matrix[i - 1][j].connections.push(currentNode);
-            } else {
-                console.log("error");
-            }
-        }
-
-        //find the nodes that are neighbors of this node (unconnected and unvisited)
-        let neighbors = [];
-
-        //Look up: above (1,1) is (1,0)
-        if (isInBounds(i, j - 1, x, y)) {
-            if (!matrix[i][j - 1].visited) {
-                neighbors.push(matrix[i][j - 1]);
-            }
-        }
-        //Look down
-        if (isInBounds(i, j + 1, x, y)) {
-            if (!matrix[i][j + 1].visited) {
-                neighbors.push(matrix[i][j + 1]);
-            }
-        }
-        //Look right
-        if (isInBounds(i + 1, j, x, y)) {
-            if (!matrix[i + 1][j].visited) {
-                neighbors.push(matrix[i + 1][j]);
-            }
-        }
-        //Look left
-        if (isInBounds(i - 1, j, x, y)) {
-            if (!matrix[i - 1][j].visited) {
-                neighbors.push(matrix[i - 1][j]);
-            }
-        }
-
-        if (neighbors.length == 0) {
-            newPath = true;
-            continue;
+    for (let x = 1; x < wallsBelow.length; x++) {
+      if (wallsBelow[x] == 0) {
+        //0 detected, place a shape
+        if (wallsBelow[x - 1] == 0) {
+          //00, add cube (single notch)
+          const horiz = new CANNON.Box(new CANNON.Vec3(iww, wh, iww));
+          const xoffset = 2 * x * (cellwidth + iww) - (length - 2 * oww + iww);
+          const yoffset =
+            2 * y * (cellwidth + iww) -
+            (length - 2 * oww - 2 * cellwidth - iww); //- 5.55;
+          base.addShape(horiz, new CANNON.Vec3(xoffset, zoffset, yoffset));
+          calcLength = 0;
         } else {
-            newPath = false;
+          //10, add a long
+          calcLength += iww;
+          const horiz = new CANNON.Box(new CANNON.Vec3(calcLength, wh, iww));
+          const xoffset =
+            2 * x * (cellwidth + iww) -
+            (length - 2 * oww + iww) -
+            calcLength +
+            iww;
+          const yoffset =
+            2 * y * (cellwidth + iww) -
+            (length - 2 * oww - 2 * cellwidth - iww); //- 5.55;
+
+          base.addShape(horiz, new CANNON.Vec3(xoffset, zoffset, yoffset));
+          calcLength = 0;
         }
-        //Pick a random neighbor to connect
-        const rand = Math.floor(Math.random() * neighbors.length);
-        const randNeighbor = neighbors[rand];
-        neighbors.splice(rand, 1);
+      } else {
+        //1 detected, add a unit and continue
+        if (wallsBelow[x - 1] == 1) {
+          //11
+          calcLength += cellwidth + iww;
+          if (x == wallsBelow.length - 1) {
+            const horiz = new CANNON.Box(new CANNON.Vec3(calcLength, wh, iww));
+            const xoffset =
+              2 * x * (cellwidth + iww) -
+              (length - 2 * oww + iww) -
+              calcLength +
+              iww +
+              2 * cellwidth;
+            const yoffset =
+              2 * y * (cellwidth + iww) -
+              (length - 2 * oww - 2 * cellwidth - iww); //- 5.55;
 
-        //Connect randNeighbor and currentNode
-        currentNode.connections.push(randNeighbor);
-        randNeighbor.connections.push(currentNode);
-
-        //Push neighbors onto stack
-        stack = stack.concat(neighbors);
-        stack.push(randNeighbor);
+            base.addShape(horiz, new CANNON.Vec3(xoffset, zoffset, yoffset));
+            calcLength = 0;
+          }
+        } else {
+          //01
+          calcLength += cellwidth + iww;
+          if (x == wallsBelow.length - 1) {
+            const horiz = new CANNON.Box(new CANNON.Vec3(calcLength, wh, iww));
+            const xoffset =
+              2 * x * (cellwidth + iww) -
+              (length - 2 * oww + iww) -
+              calcLength +
+              iww +
+              2 * cellwidth;
+            const yoffset =
+              2 * y * (cellwidth + iww) -
+              (length - 2 * oww - 2 * cellwidth - iww); //- 5.55;
+            base.addShape(horiz, new CANNON.Vec3(xoffset, zoffset, yoffset));
+            calcLength = 0;
+          }
+        }
+      }
     }
-    printMaze(matrix, x, y);
-    return matrix;
-}
-const testcellcount = 5;
-//const matrix = createMaze(testcellcount, testcellcount);
-//printMaze(matrix, testcellcount, testcellcount);
+    wallsBelow = [];
+  }
+  base.position.set(0, 6, 0);
+
+  return base;
+};
+
+const getMazeMesh = (body, mazeParams, color) => {
+  const mazeColor = color !== undefined ? color : 0xffffff;
+  const mazeMaterial = new THREE.MeshLambertMaterial({
+    color: mazeColor,
+  });
+  //Convert body to mesh
+  const mesh = bodyToMesh(body, mazeMaterial);
+
+  //Add corners
+  for (let x = 0; x < 4; x++) {
+    const cornerGeometry = new THREE.CylinderGeometry(
+      2 * mazeParams.oww,
+      2 * mazeParams.oww,
+      2 * mazeParams.wh,
+      24,
+      1,
+      false,
+      (Math.PI / 2) * x,
+      Math.PI / 2
+    );
+
+    const mazeCornerMesh = new THREE.Mesh(cornerGeometry, mazeMaterial);
+    const zoffset = mazeParams.wh + mazeParams.floor;
+    const cOffset = mazeParams.length - 2 * mazeParams.oww;
+    switch (x) {
+      case 0:
+        mazeCornerMesh.position.set(cOffset, zoffset, cOffset);
+        break;
+      case 1:
+        mazeCornerMesh.position.set(cOffset, zoffset, -cOffset);
+        break;
+      case 2:
+        mazeCornerMesh.position.set(-cOffset, zoffset, -cOffset);
+        break;
+      case 3:
+        mazeCornerMesh.position.set(-cOffset, zoffset, cOffset);
+        break;
+      default:
+        break;
+    }
+
+    mesh.add(mazeCornerMesh);
+  }
+
+  for (let i = 0; i < mesh.children.length; i++) {
+    const e = mesh.children[i];
+    e.castShadow = true;
+    e.receiveShadow = true;
+  }
+  return mesh;
+};
+
+export default { getMazeBody, getMazeMesh };
