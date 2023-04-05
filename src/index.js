@@ -34,16 +34,17 @@ const world = new CANNON.World({
 });
 
 //Camera
-/*
-const camera = new THREE.PerspectiveCamera(
-    90,
-    window.innerWidth / window.innerHeight,
-    0.1,
-    2000
-);
-*/
+let toggleCamera = true;
 
-const camera = new THREE.OrthographicCamera(
+const perspCam = new THREE.PerspectiveCamera(
+  90,
+  window.innerWidth / window.innerHeight,
+  0.1,
+  2000
+);
+perspCam.position.set(-26, 23, 26);
+
+const orthCam = new THREE.OrthographicCamera(
   window.innerWidth / -50,
   window.innerWidth / 50,
   window.innerHeight / 50,
@@ -51,7 +52,9 @@ const camera = new THREE.OrthographicCamera(
   1,
   1000
 );
-camera.position.set(-26, 23, 26);
+orthCam.position.set(-26, 23, 26);
+
+let activeCamera = orthCam;
 
 //SphereMesh and SphereBody
 const sphereRadius = 0.5;
@@ -117,8 +120,8 @@ document.body.appendChild(bar());
 document.body.appendChild(renderer.domElement);
 
 //Postprocessing
-const composer = new EffectComposer(renderer);
-const renderPass = new RenderPass(scene, camera);
+let composer = new EffectComposer(renderer);
+const renderPass = new RenderPass(scene, activeCamera);
 composer.addPass(renderPass);
 
 const smaaPass = new SMAAPass(
@@ -186,6 +189,22 @@ document.addEventListener("keypress", (e) => {
   }
 });
 
+document.addEventListener("keypress", (e) => {
+  switch (e.key) {
+    case "u":
+      //swap cameras
+      if (toggleCamera) {
+        swapCameras(perspCam);
+      } else {
+        swapCameras(orthCam);
+      }
+
+      break;
+    default:
+      break;
+  }
+});
+
 window.addEventListener("resize", onWindowResize);
 
 //Debugging/Helpers
@@ -199,7 +218,7 @@ let cannonDebugger = new CannonDebugger(scene, world, {
   },
 }); //Debugger
 
-const controls = new OrbitControls(camera, renderer.domElement);
+let controls = new OrbitControls(activeCamera, renderer.domElement);
 controls.target.set(0, 5, 0);
 controls.update();
 //const sunHelper = new THREE.CameraHelper(sunLight.shadow.camera);
@@ -215,15 +234,11 @@ function animate() {
   mazeMesh.position.copy(mazeBase.position);
   mazeMesh.quaternion.copy(mazeBase.quaternion);
 
-  //cannonDebugger.update(); //Debugger
-
   cannonDebugger.update();
 
   world.fixedStep();
   composer.render();
 }
-
-renderPass.camera;
 
 animate();
 
@@ -248,11 +263,40 @@ function rotateFromInput() {
 }
 
 function onWindowResize() {
-  camera.left = window.innerWidth / -50;
-  camera.right = window.innerWidth / 50;
-  camera.top = window.innerHeight / 50;
-  camera.bottom = window.innerHeight / -50;
-  camera.updateProjectionMatrix();
+  if (toggleCamera) {
+    activeCamera.left = window.innerWidth / -50;
+    activeCamera.right = window.innerWidth / 50;
+    activeCamera.top = window.innerHeight / 50;
+    activeCamera.bottom = window.innerHeight / -50;
+  } else {
+    activeCamera.aspect = window.innerWidth / window.innerHeight;
+    perspCam.aspect = window.innerWidth / window.innerHeight;
+  }
+
+  activeCamera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
   composer.setSize(window.innerWidth, window.innerHeight);
+}
+
+function swapCameras(targetCamera) {
+  activeCamera = targetCamera;
+  toggleCamera = !toggleCamera;
+
+  composer.dispose();
+  composer = new EffectComposer(renderer);
+  const renderPass = new RenderPass(scene, activeCamera);
+  composer.addPass(renderPass);
+  renderPass.dispose();
+
+  const smaaPass = new SMAAPass(
+    window.innerWidth * renderer.getPixelRatio(),
+    window.innerHeight * renderer.getPixelRatio()
+  );
+  composer.addPass(smaaPass);
+  smaaPass.dispose();
+  controls.dispose();
+  controls = new OrbitControls(activeCamera, renderer.domElement);
+  controls.target.set(0, 5, 0);
+  controls.update();
+  //There is no memory leak in ba sing se
 }
