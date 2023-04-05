@@ -16,16 +16,15 @@ import mazeSphere from "./mazeSphere";
 import maze from "./maze";
 
 const mazeParams = {
-  cells: 11,
+  cells: 15,
   length: 15,
   width: 15,
-  floor: 0.25,
+  floor: 0.5,
   oww: 0.5,
   iww: 0.25,
   wh: 0.5,
 };
-
-//Materials & colors
+//Color0 is the ball, 1 is the maze, 2 is the background
 const colors = getColors();
 
 const scene = new THREE.Scene();
@@ -58,7 +57,7 @@ let activeCamera = orthCam;
 
 //SphereMesh and SphereBody
 const sphereRadius = 0.5;
-const sphereMesh = mazeSphere.getMesh(sphereRadius, parseInt(colors[0]));
+const sphereMesh = mazeSphere.getMesh(sphereRadius, colors[0]);
 scene.add(sphereMesh);
 const sphereBody = mazeSphere.getBody(sphereRadius);
 world.addBody(sphereBody);
@@ -66,7 +65,7 @@ world.addBody(sphereBody);
 //Maze Mesh and Body
 const mazeBase = maze.getMazeBody(mazeParams);
 world.addBody(mazeBase);
-const mazeMesh = maze.getMazeMesh(mazeBase, mazeParams, parseInt(colors[1]));
+const mazeMesh = maze.getMazeMesh(mazeBase, mazeParams, colors[1]);
 scene.add(mazeMesh);
 
 //Ground
