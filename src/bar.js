@@ -3,34 +3,52 @@ export function bar() {
   top.id = "bar";
 
   const left = document.createElement("div");
-  left.innerText =
-    "Refreshing generates a new maze with different colors. WASD to tilt the maze! Press X to toggle debug meshes, and U to change camera type.";
+  left.innerText = "Controls: ";
   left.id = "left";
-  left.classList.add("shown", "info");
+  left.classList.add("info");
+
+  const controls_wasd = document.createElement("p");
+  controls_wasd.innerText = "- WASD to tilt the maze";
+  const controls_u = document.createElement("p");
+  controls_u.innerText = "- U to toggle camera perspective";
+  const controls_x = document.createElement("p");
+  controls_x.innerText = "- X to toggle debug meshes";
+  const controls_click = document.createElement("p");
+  controls_click.innerText = "- Click and drag to move the camera";
+  const controls_scroll = document.createElement("p");
+  controls_scroll.innerText = "- Scroll to zoom in and out";
+
+  left.appendChild(controls_wasd);
+  left.appendChild(controls_u);
+  left.appendChild(controls_x);
 
   const button = document.createElement("button");
-  button.innerHTML = "!";
-  button.addEventListener("click", () => {
-    button.classList.toggle("on");
-    right.classList.toggle("shown");
-    right.classList.toggle("hidden");
-    left.classList.toggle("shown");
-    left.classList.toggle("hidden");
-  });
 
   const right = document.createElement("div");
   right.id = "right";
-  right.innerText = "Click and drag to move the camera, scroll to zoom. ";
-  right.classList.add("shown", "info");
+
+  right.classList.add("info");
 
   const githubLink = document.createElement("a");
   githubLink.href = "https://github.com/arnh8/ball-maze";
   githubLink.innerText = "github.com/arnh8/ball-maze";
+  right.appendChild(controls_click);
+  right.appendChild(controls_scroll);
   right.appendChild(githubLink);
 
-  top.appendChild(left);
   top.appendChild(button);
-  top.appendChild(right);
+
+  const wrapper = document.createElement("div");
+  wrapper.classList.add("wrapper", "shown");
+  wrapper.appendChild(left);
+  wrapper.appendChild(right);
+  top.appendChild(wrapper);
+
+  button.addEventListener("click", () => {
+    button.classList.toggle("on");
+    wrapper.classList.toggle("hidden");
+    wrapper.classList.toggle("shown");
+  });
 
   return top;
 }

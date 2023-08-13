@@ -5,10 +5,11 @@ body {
 
 #bar {
   margin: auto auto;
-  justify-content: space-evenly;
+  gap: 10%;
+  justify-content: center;
   align-items: center;
   display: flex;
-  padding: 5px;
+  padding: 15px;
   box-sizing: border-box;
 
   color: white;
@@ -19,9 +20,38 @@ body {
   min-height: 5%;
 }
 
+#bar p {
+  margin: 0px;
+}
+
+#left {
+  min-width: 300px;
+}
+
+#right {
+  min-width: 300px;
+}
+
+.wrapper {
+  max-width: 900px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  overflow-x: auto;
+}
+
+.wrapper::-webkit-scrollbar {
+  height: 10px; /* width of the scrollbar */
+  background-color: rgba(255, 255, 255, 0.747);
+}
+
+.wrapper::-webkit-scrollbar-thumb {
+  background-color: #6b6b6b; /* color of the thumb */
+}
+
 button {
   border-radius: 50%;
-  width: 50px;
+  min-width: 50px;
   height: 50px;
   opacity: 35%;
   background-color: rgb(255, 255, 255);
@@ -44,6 +74,7 @@ a {
   visibility: hidden;
   opacity: 0;
   transition: 0.3s;
+  overflow-x: hidden !important;
 }
 
 .shown {
