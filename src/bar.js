@@ -17,6 +17,8 @@ export function bar() {
   controls_click.innerText = "- Click and drag to move the camera";
   const controls_scroll = document.createElement("p");
   controls_scroll.innerText = "- Scroll to zoom in and out";
+  const controls_refresh = document.createElement("p");
+  controls_refresh.innerText = "- Refresh to randomize colors";
 
   left.appendChild(controls_wasd);
   left.appendChild(controls_u);
@@ -34,6 +36,7 @@ export function bar() {
   githubLink.innerText = "github.com/arnh8/ball-maze";
   right.appendChild(controls_click);
   right.appendChild(controls_scroll);
+  right.appendChild(controls_refresh);
   right.appendChild(githubLink);
 
   top.appendChild(button);

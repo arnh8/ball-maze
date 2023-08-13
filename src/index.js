@@ -41,7 +41,7 @@ const perspCam = new THREE.PerspectiveCamera(
   0.1,
   2000
 );
-perspCam.position.set(-26, 23, 26);
+perspCam.position.set(-26, 33, 26);
 
 const orthCam = new THREE.OrthographicCamera(
   window.innerWidth / -50,
@@ -51,7 +51,7 @@ const orthCam = new THREE.OrthographicCamera(
   1,
   1000
 );
-orthCam.position.set(-26, 23, 26);
+orthCam.position.set(-26, 33, 26);
 
 let activeCamera = orthCam;
 

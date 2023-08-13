@@ -30,6 +30,7 @@ const getBody = (radius) => {
     shape: new CANNON.Sphere(radius),
   });
   sphereBody.position.set(0, 20, 0);
+  sphereBody.mass = 30;
 
   return sphereBody;
 };
